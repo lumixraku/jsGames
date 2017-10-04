@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body{
+            margin: 2px;
+        }
+        #canvas{
+            width: 100%;
+            box-sizing: border-box;
+            border:1px solid black;
+        }
+        #input-speed{
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas" width="300" height="400"></canvas>
+speed setting
+<input id="input-speed" type="range" min="0" max="10" step="0.01" value="5"/>
+</body>
+<script type="module" src="ball.js"></script>
+<script type="module" src="paddle.js"></script>
+<script type="module" src="game.js"></script>
+<script type="module" src="pingpong.js"></script>
+</html>
