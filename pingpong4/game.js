@@ -9,22 +9,29 @@ import {
 import {
     Block
 } from './block.js'
+import {
+    scence
+} from './scence.js'
+
 
 import {
     CANVAS_WIDTH,
     CANVAS_HEIGHT
 } from './constants.js'
+
+
 import controllerFn from './controller.js'
 import Collision from './collision.js'
-import Assets from './assets.js'
+import assets from './assets.js'
 import util from './util/util.js'
 import {blockPos} from './level.js'
 
 
-
+//gameStatus
 var RUNNING = 1
 var NOTSTART = 0
-
+var FINISH = 5
+var DEAD = 4
 
 function Game() {
     var that = this;
@@ -39,42 +46,52 @@ function Game() {
     })()
     this.context = this.canvas.context;
 
-    controllerFn();
-
     this.timer = null;
     this.paddle = Paddle();
     this.ball = Ball();
+    this.bindEvents();
+
 
     //状态控制 //只要按下过 left  就进入 left 状态
     this.keyActions = {
         leftClick: function () {
             //37
-            this.paddle.moveDirection = -1;
+            if(this.gameStatus !== DEAD){
+                this.paddle.moveDirection = -1;
+            }
         }.bind(this),
         rightClick: function () {
             //39
-            this.paddle.moveDirection = 1;
-        }.bind(this),
-    }
+            if(this.gameStatus != DEAD){
+                this.paddle.moveDirection = 1;
 
-    Assets.loadPicFinishd().then(imgs => {
+            }
+        }.bind(this),
+        anyKeyPress: function(){
+            if(this.gameStatus != RUNNING  && this.gameStatus != DEAD){
+                this.start()
+            }
+
+        }.bind(this)
+    }
+    controllerFn();
+    assets.loadPicFinishd().then(imgs => {
         //所有资源加载完后才开始
         _.set(this, 'assets.imgs', imgs)
-        this.start()
+        scence.welcome(this.context, this);
     })
 
 
 }
 Game.prototype = {
 
-
     start: function () {
         var that = this;
 
         this.gameStatus = RUNNING;
+        this.level = 1;
+        this.loadBlocks(this.level);
 
-        this.loadBlocks(1);
-        this.bindEvents();
         var moveTimer = () => {
 
             if (this.gameStatus !== RUNNING) return
@@ -100,13 +117,33 @@ Game.prototype = {
             // setTimeout(moveTimer, 1000/30);
             that.updateCanvas();
             that.collisionDetection();
+            that.loadLevel();
         }
         setInterval(moveTimer, 1000 / 30);
 
     },
+    loadLevel: function(){
 
+        //专用于计算目前所有 block 的生命值的 用户判断是否载入下一关
+        var countArrTmp = [...this.blocks]
+        var countall = 0;
+        for(let a of countArrTmp){
+            countall = countall + a.lives
+        }
+        if(countall === 0){
+            this.level++;
+            this.loadBlocks(this.level)
+        }
+    },
 
     loadBlocks: function (l) {
+        if(blockPos.length <= l){
+            // console.log('tongguan')
+            scence.finish(this.context, this)
+            this.gameStatus = FINISH
+            return
+        }
+
         var poss = blockPos[l]
         for(let p of poss){
             var b = Block(p.pos[0], p.pos[1], p.lives)
@@ -116,27 +153,29 @@ Game.prototype = {
         }
     },
     draw: function (imgs) {
+        // this.context.beginPath();
 
         //paddle
         this.context.fillStyle = 'black';
-        this.paddle.draw(this.context, this.assets.imgs[0], this.paddle.x, this.paddle.y)
-
-
+        scence.paddle(this.context, this.paddle, this.assets.imgs)
 
         //ball
-        this.context.beginPath();
-        this.ball.draw(this.context, this.assets.imgs[1], this.ball.x, this.ball.y)
-        this.context.fill();
+        scence.ball(this.context, this.ball, this.assets.imgs)
 
         //block
         for(let b of this.blocks){
-            b.draw(this.context, this.assets.imgs[2], b.x, b.y)
+            if(b.lives >0 ){
+                scence.block(this.context, b, this.assets.imgs)
+            }
         }
+        // this.context.fill();
 
     },
     updateCanvas: function () {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.draw();
+        if(this.gameStatus !== FINISH && this.gameStatus !== DEAD){
+            this.draw();
+        }
     },
 
     collisionDetection: function () {
@@ -156,27 +195,43 @@ Game.prototype = {
         //ball and block
         for(let b of this.blocks){
             // debugger
-            var colliders2 = Collision.detectRadius(this.ball, b)
-            if(colliders2){
-                util.log('block peng')
 
-                if(colliders2.y){
-                    this.ball.changeV(-1 * colliders2.y);
-                }
+            if(b.lives > 0){
 
-                if(colliders2.x){
-                    this.ball.changeH(-1 * colliders2.x);
+                var coll_rs2 = Collision.detectRadius(this.ball, b)
+                if(coll_rs2){
+                    util.log('block peng')
+                    b.lives --
+                    if(coll_rs2.y){
+                        this.ball.changeV(-1 * coll_rs2.y);
+                    }
+
+                    if(coll_rs2.x){
+                        this.ball.changeH(-1 * coll_rs2.x);
+                    }
+                    break
                 }
-                break
             }
 
         }
+
+        // ballAndBottom
+        if(this.ball.y + this.ball.radius >= CANVAS_HEIGHT){
+            scence.dead(this.context, this)
+            this.gameStatus = DEAD
+        }
+
+
+
+
 
     },
 
     bindEvents: function () {
         var that = this;
         window.addEventListener('keydown', function (event) {
+
+
             switch (event.keyCode) {
                 case 37:
                 case 65:
@@ -185,6 +240,9 @@ Game.prototype = {
                 case 39:
                 case 58:
                     that.keyActions['rightClick']()
+                    break
+                default:
+                    that.keyActions['anyKeyPress']()
             }
 
         }, false)
