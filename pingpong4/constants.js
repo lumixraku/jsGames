@@ -1,0 +1,19 @@
+var CANVAS_WIDTH = 300;
+var CANVAS_HEIGHT = 400;
+var PADDLE_WIDTH = 100
+var PADDLE_HEIGHT = 20
+var BLOCK_WIDTH = 100
+var BLOCK_HEIGHT = 20
+var BALL_RADIUS = 5
+var moveSpeed = 5
+
+export {
+    CANVAS_WIDTH,
+    CANVAS_HEIGHT,
+    PADDLE_WIDTH,
+    PADDLE_HEIGHT,
+    BLOCK_WIDTH,
+    BLOCK_HEIGHT,
+    BALL_RADIUS,
+    moveSpeed,
+}
