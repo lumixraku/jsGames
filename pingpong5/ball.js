@@ -2,6 +2,7 @@ import {CANVAS_WIDTH, CANVAS_HEIGHT, moveSpeed, BALL_RADIUS} from './constants.j
 import util from './util/util.js'
 
 
+
 function Ball(moveSpeed){
     var obj = {
         radius: 5,
